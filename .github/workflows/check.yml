@@ -1,0 +1,22 @@
+name: Static site checks
+on:
+  push:
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Syntax check JavaScript
+        run: node --check app.js
+      - name: Verify pages
+        run: |
+          test -f index.html
+          test -f styles.css
+          test -f app.js
+          test -f robots.txt
+          test -f sitemap.xml
+          test -f tools/website-audit.html
