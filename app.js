@@ -110,20 +110,24 @@ function renderSpecific(kind, a) {
       '</div>');
   }
   if (kind === 'meta-tag-checker') {
-    const essentials = [
+    const core = [
       ['title', !!a.title, a.title || 'Missing'],
       ['description', !!a.description, a.description || 'Missing'],
       ['canonical', !!a.canonical, a.canonical || 'Missing'],
       ['viewport', !!a.viewport, a.viewport || 'Missing'],
-      ['lang', !!a.lang, a.lang || 'Missing'],
+      ['lang', !!a.lang, a.lang || 'Missing']
+    ];
+    const optional = [
       ['robots', !!a.robots, a.robots || 'Not set'],
       ['Open Graph', !!a.og.length, a.og.length + ' tag(s)'],
       ['JSON-LD', !!a.jsonld.length, a.jsonld.length + ' block(s)']
     ];
-    const missing = essentials.filter((x) => !x[1]).length;
-    return reportShell('Head tag inventory', missing ? missing + ' gaps' : 'Core signals present',
-      '<div class="result-grid">' + essentials.map((x) => metric(x[0], x[2])).join('') +
-      '</div><p class="note">This is a practical head-tag inventory, not a search-engine ranking test.</p>');
+    const missingCore = core.filter((x) => !x[1]).length;
+    const renderMetric = (label,value) => metric(label,value);
+    return reportShell('Head tag inventory', missingCore ? missingCore + ' core gaps' : 'Core signals present',
+      '<p class="note">Core signals</p><div class="result-grid">' + core.map((x) => renderMetric(x[0], x[2])).join('') +
+      '</div><p class="note">Optional signals</p><div class="result-grid">' + optional.map((x) => renderMetric(x[0], x[2])).join('') +
+      '</div><p class="note">Optional metadata can be useful, but its absence is not automatically an error. This is a practical inventory, not a ranking test.</p>');
   }
   if (kind === 'favicon-checker') {
     const iconLinks = [...a.doc.querySelectorAll('link')].filter((m) => /(^|\s)(icon|apple-touch-icon)(\s|$)/i.test(m.getAttribute('rel') || ''));
