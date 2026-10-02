@@ -33,3 +33,5 @@
 .audit-cats span{font-size:9px;color:#858b88;text-transform:uppercase;letter-spacing:.08em}
 .finding-fix{display:inline-block;margin-left:12px;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#596562;text-decoration:underline;text-underline-offset:3px}
 @media(max-width:720px){.audit-cats{grid-template-columns:1fr}.audit-cats>div{border-right:0;border-bottom:1px solid var(--line);margin-right:0}.audit-cats>div:last-child{border-bottom:0}}
+
+.ad-after-result{min-height:90px;margin:30px 0;border-top:1px dashed #c9c5b9;border-bottom:1px dashed #c9c5b9}
