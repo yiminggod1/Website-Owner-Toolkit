@@ -25,6 +25,15 @@ function analyzeHtml(html) {
   const missingAlt = images.filter((img) => !img.hasAttribute('alt') || !img.getAttribute('alt').trim());
   const links = [...doc.querySelectorAll('a[href]')];
   const emptyLinks = links.filter((a) => !a.textContent.trim() && !a.getAttribute('aria-label'));
+  const linkStats = { absolute: 0, relative: 0, anchors: 0, special: 0 };
+  links.forEach((a) => {
+    const href = (a.getAttribute('href') || '').trim();
+    if (!href) return;
+    if (/^#/.test(href)) linkStats.anchors++;
+    else if (/^(mailto:|tel:|javascript:)/i.test(href)) linkStats.special++;
+    else if (/^https?:\/\//i.test(href)) linkStats.absolute++;
+    else linkStats.relative++;
+  });
   const og = [...doc.querySelectorAll('meta[property^="og:" i]')];
   const jsonld = [...doc.querySelectorAll('script[type="application/ld+json"]')];
   const robots = doc.querySelector('meta[name="robots" i]')?.getAttribute('content') || '';
@@ -49,7 +58,7 @@ function analyzeHtml(html) {
 
   return {
     doc, title, description, canonical, viewport, lang, h1, headings,
-    images, missingAlt, links, emptyLinks, og, jsonld, robots, words, issues,
+    images, missingAlt, links, emptyLinks, linkStats, og, jsonld, robots, words, issues,
     score: Math.round(Math.max(0, 13 - issues.length) / 13 * 100)
   };
 }
@@ -96,6 +105,22 @@ function renderSpecific(kind, a) {
       metric('Preview', a.description || '—') +
       '</div>');
   }
+  if (kind === 'meta-tag-checker') {
+    const essentials = [
+      ['title', !!a.title, a.title || 'Missing'],
+      ['description', !!a.description, a.description || 'Missing'],
+      ['canonical', !!a.canonical, a.canonical || 'Missing'],
+      ['viewport', !!a.viewport, a.viewport || 'Missing'],
+      ['lang', !!a.lang, a.lang || 'Missing'],
+      ['robots', !!a.robots, a.robots || 'Not set'],
+      ['Open Graph', !!a.og.length, a.og.length + ' tag(s)'],
+      ['JSON-LD', !!a.jsonld.length, a.jsonld.length + ' block(s)']
+    ];
+    const missing = essentials.filter((x) => !x[1]).length;
+    return reportShell('Head tag inventory', missing ? missing + ' gaps' : 'Core signals present',
+      '<div class="result-grid">' + essentials.map((x) => metric(x[0], x[2])).join('') +
+      '</div><p class="note">This is a practical head-tag inventory, not a search-engine ranking test.</p>');
+  }
   if (kind === 'canonical-checker') {
     return reportShell('Canonical check', a.canonical ? 'Found' : 'Missing',
       '<div class="result-grid">' + metric('Canonical', a.canonical || '—') +
@@ -123,9 +148,11 @@ function renderSpecific(kind, a) {
     return reportShell('Link inventory', a.links.length + ' links',
       '<div class="result-grid">' +
       metric('Links', a.links.length) +
+      metric('Relative', a.linkStats.relative) +
+      metric('Absolute', a.linkStats.absolute) +
+      metric('Anchors', a.linkStats.anchors) +
       metric('Empty text', a.emptyLinks.length) +
-      metric('Accessible links', Math.max(0, a.links.length-a.emptyLinks.length)) +
-      '</div>');
+      '</div><p class="note">Relative links are commonly used for internal navigation; absolute URLs may be internal or external, depending on the site.</p>');
   }
   if (kind === 'schema-validator') {
     const rows = a.jsonld.map((s, i) => {
@@ -197,13 +224,18 @@ function renderTool(kind, host) {
       '<h2>Audit a public URL</h2><p class="note">We try a browser fetch first. Cross-origin pages may require the HTML fallback.</p>' +
       '<div class="field"><label>Website URL</label><input id="url-input" placeholder="https://example.com"></div>' +
       '<div class="actions"><button class="run-button" id="run-url">Run audit</button>' +
-      '<button class="clear-button" id="load-demo">Use example</button></div>' +
+      '<button class="clear-button" id="load-demo">Load sample HTML</button></div>' +
       '<div class="ad-in-tool">Advertisement</div><details><summary>HTML fallback</summary>' +
       '<div class="field"><label>Paste HTML source</label><textarea id="html-fallback"></textarea></div>' +
       '<button class="clear-button" id="run-html">Analyze pasted HTML</button></details>' +
       '<div class="result" id="result">' + reportShell('Audit results','Waiting','') + '</div>';
 
-    $('#load-demo').onclick = () => $('#url-input').value = 'https://example.com';
+    $('#load-demo').onclick = () => {
+      const sample = '<!doctype html><html lang="en"><head><title>Sample Site — Owner Guide</title><meta name="description" content="A sample page used to demonstrate the audit report and common website signals."><link rel="canonical" href="https://example.com/guide"><meta name="viewport" content="width=device-width, initial-scale=1"><meta property="og:title" content="Sample Site"><script type="application/ld+json">{\"@context\":\"https://schema.org\",\"@type\":\"Article\",\"headline\":\"Sample Site\"}</script></head><body><h1>Sample Site</h1><h2>Guide</h2><p>This sample demonstrates a local audit.</p><img src="/hero.jpg" alt="Sample hero"></body></html>';
+      $('#html-fallback').value = sample;
+      host.querySelector('details').open = true;
+      $('#result').innerHTML = renderAuditReport(analyzeHtml(sample));
+    };
     $('#run-html').onclick = () =>
       $('#result').innerHTML = renderAuditReport(analyzeHtml($('#html-fallback').value));
     $('#run-url').onclick = async () => {
@@ -509,7 +541,8 @@ function frame(kind) {
     '<div class="side-card"><h3>Privacy-first</h3><p>Browser tools process your input locally where possible. No account is required.</p></div></aside>' +
     '<div class="tool-content"><h2>What this tool checks</h2><p>This page focuses on one practical website job. Results are informational and should be reviewed alongside your normal development and SEO workflow.</p>' +
     '<div class="faq"><article><h3>Does this guarantee rankings?</h3><p>No. Technical checks cannot guarantee search placement.</p></article>' +
-    '<article><h3>Can every URL be fetched?</h3><p>No. Browser cross-origin rules can block a direct read; use the relevant fallback.</p></article></div></div></div>';
+    '<article><h3>Can every URL be fetched?</h3><p>No. Browser cross-origin rules can block a direct read; use the relevant fallback.</p></article>' +
+    '<article><h3>What should I fix first?</h3><p>Start with missing or contradictory page-level signals, then review structure, links, images, and indexability.</p></article></div></div></div>';
   renderTool(kind, $('#tool-panel'));
 }
 document.addEventListener('DOMContentLoaded', () => {
