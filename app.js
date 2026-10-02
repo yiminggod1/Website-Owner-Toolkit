@@ -694,7 +694,7 @@ function frame(kind) {
     '<div class="side-card"><h3>How to use it</h3><p>Start with one page or source, review the finding, then make the next fix.</p>' +
     '<ul><li>Use one source at a time.</li><li>Fix critical findings first.</li><li>Re-check after publishing.</li></ul></div>' +
     '<div class="side-card"><h3>Privacy-first</h3><p>Browser tools process your input locally where possible. No account is required.</p></div></aside>' +
-    '<div class="tool-content"><h2>What this tool checks</h2><p>This page focuses on one practical website job. Results are informational and should be reviewed alongside your normal development and SEO workflow.</p>' +
+    '<div class="tool-content"><div class="ad-in-tool ad-after-result">Advertisement</div><h2>What this tool checks</h2><p>This page focuses on one practical website job. Results are informational and should be reviewed alongside your normal development and SEO workflow.</p>' +
     '<div class="faq"><article><h3>Does this guarantee rankings?</h3><p>No. Technical checks cannot guarantee search placement.</p></article>' +
     '<article><h3>Can every URL be fetched?</h3><p>No. Browser cross-origin rules can block a direct read; use the relevant fallback.</p></article>' +
     '<article><h3>What should I fix first?</h3><p>Start with missing or contradictory page-level signals, then review structure, links, images, and indexability.</p></article></div></div></div>';
