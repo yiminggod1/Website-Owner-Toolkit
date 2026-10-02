@@ -76,7 +76,28 @@ function metric(label, value) {
   return '<div class="metric"><small>' + escapeHtml(label) +
     '</small><strong>' + escapeHtml(value) + '</strong></div>';
 }
+function auditFixLink(message) {
+  const routes = [
+    [/title/i, 'meta-title-checker.html'],
+    [/description/i, 'meta-description-checker.html'],
+    [/canonical/i, 'canonical-checker.html'],
+    [/viewport/i, 'viewport-checker.html'],
+    [/H1/i, 'heading-checker.html'],
+    [/image|alt/i, 'image-alt-checker.html'],
+    [/link/i, 'link-checker.html'],
+    [/Open Graph/i, 'open-graph-checker.html'],
+    [/JSON-LD|schema/i, 'schema-validator.html'],
+    [/robots/i, 'robots-txt-checker.html']
+  ];
+  const match = routes.find((x) => x[0].test(message));
+  return match ? '<a class="finding-fix" href="./' + match[1] + '">Open fixer →</a>' : '';
+}
 function renderAuditReport(a) {
+  const categories = {
+    'Page basics': a.issues.filter(i => /title|description|H1|canonical|viewport|lang/i.test(i[1])).length,
+    'Media & links': a.issues.filter(i => /image|alt|link/i.test(i[1])).length,
+    'Search & sharing': a.issues.filter(i => /Open Graph|JSON-LD|robots/i.test(i[1])).length
+  };
   return reportShell('Audit summary', a.issues.length ? a.issues.length + ' findings' : 'No findings',
     '<div class="result-grid">' +
       metric('Health score', a.score + '/100') +
@@ -86,9 +107,12 @@ function renderAuditReport(a) {
       metric('Links', a.links.length) +
       metric('Text words', a.words.toLocaleString()) +
     '</div>' +
+    '<div class="audit-cats">' +
+      Object.entries(categories).map(([label,count]) => '<div><small>' + escapeHtml(label) + '</small><strong>' + count + '</strong><span>findings</span></div>').join('') +
+    '</div>' +
     a.issues.map((i) =>
       '<div class="finding"><span class="sev ' + i[0] + '"></span><div><strong>' +
-      escapeHtml(i[1]) + '</strong></div><small>' + escapeHtml(i[0]) +
+      escapeHtml(i[1]) + '</strong>' + auditFixLink(i[1]) + '</div><small>' + escapeHtml(i[0]) +
       '</small></div>'
     ).join(''));
 }
