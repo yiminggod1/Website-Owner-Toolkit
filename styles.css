@@ -24,3 +24,12 @@
 .guide-next a{font-size:11px;text-transform:uppercase;letter-spacing:.11em}
 .guide-tool-card{grid-column:span 2;background:#e3e7e1;border-top-color:var(--ink)}
 @media(max-width:720px){.guide-article{padding-top:4px}.guide-article h1{font-size:49px}.guide-dek{font-size:16px;margin-bottom:36px}.guide-tool-card{grid-column:span 1}}
+
+.audit-cats{display:grid;grid-template-columns:repeat(3,1fr);margin:15px 0 4px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.audit-cats>div{padding:13px 12px 13px 0;margin-right:12px;border-right:1px solid var(--line)}
+.audit-cats>div:last-child{border-right:0;margin-right:0}
+.audit-cats small{display:block;color:#858b88;font-size:9px;text-transform:uppercase;letter-spacing:.1em}
+.audit-cats strong{font:500 24px var(--serif);display:inline-block;margin-right:6px;margin-top:4px}
+.audit-cats span{font-size:9px;color:#858b88;text-transform:uppercase;letter-spacing:.08em}
+.finding-fix{display:inline-block;margin-left:12px;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#596562;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:720px){.audit-cats{grid-template-columns:1fr}.audit-cats>div{border-right:0;border-bottom:1px solid var(--line);margin-right:0}.audit-cats>div:last-child{border-bottom:0}}
