@@ -13,7 +13,8 @@ const normalizeUrl = (value) => {
 };
 
 function analyzeHtml(html) {
-  const doc = new DOMParser().parseFromString(html || '', 'text/html');
+  const rawHtml = String(html || '');
+  const doc = new DOMParser().parseFromString(rawHtml, 'text/html');
   const title = (doc.querySelector('title')?.textContent || '').trim();
   const description = (doc.querySelector('meta[name="description" i]')?.getAttribute('content') || '').trim();
   const canonical = doc.querySelector('link[rel="canonical" i]')?.getAttribute('href') || '';
@@ -58,7 +59,10 @@ function analyzeHtml(html) {
 
   return {
     doc, title, description, canonical, viewport, lang, h1, headings,
-    images, missingAlt, links, emptyLinks, linkStats, og, jsonld, robots, words, issues,
+    images, missingAlt, links, emptyLinks, linkStats, og, jsonld, robots, words,
+    sourceChars: rawHtml.length,
+    sourceBytes: typeof TextEncoder !== 'undefined' ? new TextEncoder().encode(rawHtml).length : rawHtml.length,
+    issues,
     score: Math.round(Math.max(0, 13 - issues.length) / 13 * 100)
   };
 }
@@ -120,6 +124,62 @@ function renderSpecific(kind, a) {
     return reportShell('Head tag inventory', missing ? missing + ' gaps' : 'Core signals present',
       '<div class="result-grid">' + essentials.map((x) => metric(x[0], x[2])).join('') +
       '</div><p class="note">This is a practical head-tag inventory, not a search-engine ranking test.</p>');
+  }
+  if (kind === 'favicon-checker') {
+    const iconLinks = [...a.doc.querySelectorAll('link')].filter((m) => /(^|\s)(icon|apple-touch-icon)(\s|$)/i.test(m.getAttribute('rel') || ''));
+    const manifest = a.doc.querySelector('link[rel="manifest" i]');
+    return reportShell('Favicon inventory', iconLinks.length ? iconLinks.length + ' icon link(s)' : 'No icon link',
+      '<div class="result-grid">' + metric('Icon links', iconLinks.length) +
+      metric('Manifest', manifest ? 'Found' : 'Not found') +
+      metric('HTML lang', a.lang || 'Missing') + '</div>' +
+      (iconLinks.length ? iconLinks.map((m) => '<div class="finding"><span class="sev low"></span><div><strong>' +
+        escapeHtml(m.getAttribute('rel') || 'icon') + '</strong></div><small>' +
+        escapeHtml(m.getAttribute('href') || 'No href') + '</small></div>').join('') :
+        '<p class="note">Add at least one favicon link and verify its referenced asset is published.</p>'));
+  }
+  if (kind === 'hreflang-checker') {
+    const links = [...a.doc.querySelectorAll('link[rel="alternate" i][hreflang]')];
+    const values = links.map((m) => (m.getAttribute('hreflang') || '').trim().toLowerCase());
+    const duplicates = [...new Set(values.filter((v,i)=>values.indexOf(v)!==i))];
+    const hasDefault = values.includes('x-default');
+    return reportShell('Hreflang inventory', links.length + ' alternate link(s)',
+      '<div class="result-grid">' + metric('Alternates', links.length) +
+      metric('x-default', hasDefault ? 'Found' : 'Not found') +
+      metric('Duplicate values', duplicates.length) + '</div>' +
+      (duplicates.length ? duplicates.map((v) => '<div class="finding"><span class="sev med"></span><div><strong>Duplicate hreflang: ' +
+        escapeHtml(v) + '</strong></div><small>review</small></div>').join('') :
+        '<p class="note">Review the language-region values and make sure each alternate points to the intended URL.</p>'));
+  }
+  if (kind === 'analytics-tag-checker') {
+    const source = (a.doc.documentElement?.outerHTML || '').toLowerCase();
+    const patterns = [
+      ['Google Tag / GTM', /googletagmanager|gtag\(/],
+      ['Google Analytics', /google-analytics|googleanalytics|ga\(['"]create/],
+      ['Meta Pixel', /connect\.facebook\.net|fbq\(/],
+      ['Plausible', /plausible\.io/],
+      ['Hotjar', /hotjar/],
+      ['Matomo', /matomo|piwik/
+    ];
+    const found = patterns.filter((x)=>x[1].test(source)).map((x)=>x[0]);
+    return reportShell('Analytics tag scan', found.length ? found.length + ' detected' : 'No common tags detected',
+      found.map((v) => '<div class="finding"><span class="sev low"></span><div><strong>' +
+        escapeHtml(v) + '</strong></div><small>detected</small></div>').join('') ||
+      '<p class="note">No common analytics or tag-manager signatures were detected in the pasted HTML.</p>');
+  }
+  if (kind === 'image-dimensions-checker') {
+    const missingDimensions = a.images.filter((img) => !img.getAttribute('width') || !img.getAttribute('height'));
+    return reportShell('Image dimensions', missingDimensions.length ? missingDimensions.length + ' missing dimensions' : 'Dimensions present',
+      '<div class="result-grid">' + metric('Images', a.images.length) +
+      metric('Missing width/height', missingDimensions.length) +
+      metric('Alt coverage', a.images.length ? Math.round((a.images.length-a.missingAlt.length)/a.images.length*100) + '%' : '100%') +
+      '</div><p class="note">Width and height attributes give the browser useful layout information before an image finishes loading.</p>');
+  }
+  if (kind === 'page-size-checker') {
+    return reportShell('HTML source size', a.sourceBytes.toLocaleString() + ' bytes',
+      '<div class="result-grid">' + metric('Characters', a.sourceChars.toLocaleString()) +
+      metric('Bytes', a.sourceBytes.toLocaleString()) +
+      metric('Approx. KB', (a.sourceBytes/1024).toFixed(1) + ' KB') + '</div>' +
+      '<p class="note">This measures the pasted HTML source only; it does not include images, CSS, JavaScript, fonts, or third-party requests.</p>');
   }
   if (kind === 'canonical-checker') {
     return reportShell('Canonical check', a.canonical ? 'Found' : 'Missing',
@@ -215,7 +275,8 @@ function renderTool(kind, host) {
   const htmlCheckers = [
     'meta-title-checker','meta-description-checker','meta-tag-checker',
     'canonical-checker','heading-checker','image-alt-checker','link-checker',
-    'schema-validator','open-graph-checker','viewport-checker'
+    'schema-validator','open-graph-checker','viewport-checker',
+    'favicon-checker','hreflang-checker','analytics-tag-checker','image-dimensions-checker','page-size-checker'
   ];
   if (htmlCheckers.includes(kind)) return renderHtmlChecker(kind, host);
 
@@ -497,6 +558,65 @@ function renderTool(kind, host) {
     return;
   }
 
+  if (kind === 'redirect-checker') {
+    host.innerHTML =
+      '<h2>Inspect redirect headers</h2><p class="note">Paste the first response line and headers from a redirect response.</p>' +
+      '<textarea id="redirect" placeholder="HTTP/1.1 301 Moved Permanently\nLocation: https://example.com/new-page"></textarea>' +
+      '<button class="run-button" id="run" style="margin-top:14px">Analyze redirect</button><div class="result" id="result"></div>';
+    $('#run').onclick = () => {
+      const raw = $('#redirect').value.trim();
+      const match = raw.match(/^HTTP\/\S+\s+(\d{3})\b/im);
+      const status = match ? Number(match[1]) : 0;
+      const location = (raw.match(/^location\s*:\s*(.+)$/im) || [,''])[1].trim();
+      const isRedirect = status >= 300 && status < 400;
+      const finding = !status ? '<p class="note">Could not read an HTTP status line.</p>' :
+        isRedirect && !location ? '<div class="finding"><span class="sev med"></span><div><strong>Redirect status without Location</strong></div><small>review</small></div>' :
+        isRedirect ? '<div class="finding"><span class="sev low"></span><div><strong>Redirect target</strong></div><small>'+escapeHtml(location)+'</small></div>' :
+        '<div class="finding"><span class="sev low"></span><div><strong>No redirect status detected</strong></div><small>HTTP '+status+'</small></div>';
+      $('#result').innerHTML = reportShell('Redirect review', status ? 'HTTP '+status : 'Incomplete', finding);
+    };
+    return;
+  }
+
+  if (kind === 'email-dns-checker') {
+    host.innerHTML =
+      '<h2>Check email DNS records</h2><p class="note">We query DNS over HTTPS for MX, SPF, DMARC, and an optional DKIM selector.</p>' +
+      '<div class="row"><div class="field"><label>Domain</label><input id="domain" placeholder="example.com"></div>' +
+      '<div class="field"><label>DKIM selector</label><input id="selector" value="default"></div></div>' +
+      '<button class="run-button" id="run">Check records</button><div class="result" id="result"></div>';
+    $('#run').onclick = async () => {
+      const domain = $('#domain').value.trim().replace(/^https?:\/\//i,'').replace(/\/.*$/,'');
+      const selector = $('#selector').value.trim();
+      if (!domain) { $('#result').innerHTML = reportShell('Enter a domain','Needed',''); return; }
+      $('#result').innerHTML = reportShell('Email DNS','Working','');
+      const query = async (name,type) => {
+        const r = await fetch('https://cloudflare-dns.com/dns-query?name='+encodeURIComponent(name)+'&type='+type,{headers:{accept:'application/dns-json'}});
+        return (await r.json()).Answer || [];
+      };
+      try {
+        const [mx,txt,dmarc,dkim] = await Promise.all([
+          query(domain,'MX'),
+          query(domain,'TXT'),
+          query('_dmarc.'+domain,'TXT'),
+          selector ? query(selector+'._domainkey.'+domain,'TXT') : Promise.resolve([])
+        ]);
+        const spf = txt.filter(x => /v=spf1/i.test(x.data));
+        const records = [
+          ['MX', mx.map(x=>x.data).join(' | ') || 'Not found'],
+          ['SPF', spf.map(x=>x.data).join(' | ') || 'Not found'],
+          ['DMARC', dmarc.map(x=>x.data).join(' | ') || 'Not found'],
+          ['DKIM', dkim.map(x=>x.data).join(' | ') || 'Not found']
+        ];
+        const missing = records.filter(x=>x[1]==='Not found').length;
+        $('#result').innerHTML = reportShell('Email DNS report', missing ? missing + ' missing' : 'Records found',
+          records.map((x)=>'<div class="finding"><span class="sev '+(x[1]==='Not found'?'med':'low')+'"></span><div><strong>'+escapeHtml(x[0])+'</strong></div><small>'+escapeHtml(x[1])+'</small></div>').join(''));
+      } catch {
+        $('#result').innerHTML = reportShell('DNS request failed','Error','<p class="note">The DNS-over-HTTPS request was blocked or unavailable.</p>');
+      }
+    };
+    return;
+  }
+
   host.innerHTML = '<h2>Tool ready</h2><p class="note">This focused page is wired into the toolkit and ready for the next implementation pass.</p>';
 }
 
@@ -524,7 +644,14 @@ function frame(kind) {
     'json-ld-generator':['JSON-LD Generator','GENERATORS / 01','Generate JSON-LD schema.'],
     'robots-generator':['Robots.txt Generator','GENERATORS / 02','Generate a robots.txt starter.'],
     'sitemap-generator':['Sitemap Generator','GENERATORS / 03','Generate an XML sitemap.'],
-    'viewport-checker':['Viewport Checker','MOBILE / 01','Check viewport metadata.']
+    'viewport-checker':['Viewport Checker','MOBILE / 01','Check viewport metadata.'],
+    'favicon-checker':['Favicon Checker','SEO / 08','Review favicon, touch icon, and manifest links.'],
+    'hreflang-checker':['Hreflang Checker','SEO / 09','Review multilingual alternate links.'],
+    'analytics-tag-checker':['Analytics Tag Checker','GROWTH / 02','Detect common analytics and tag-manager snippets.'],
+    'image-dimensions-checker':['Image Dimensions Checker','TECH / 05','Find images missing width or height attributes.'],
+    'page-size-checker':['Page Size Checker','TECH / 06','Measure pasted HTML source size.'],
+    'redirect-checker':['Redirect Inspector','TECH / 07','Review redirect status and Location headers.'],
+    'email-dns-checker':['Email DNS Checker','TECH / 08','Inspect MX, SPF, DMARC, and optional DKIM records.']
   };
   const meta = names[kind] || [kind,'TOOL','Focused website utility'];
   document.title = meta[0] + ' — Website Owner Toolkit';
