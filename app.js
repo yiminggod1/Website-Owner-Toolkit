@@ -158,7 +158,7 @@ function renderSpecific(kind, a) {
       ['Meta Pixel', /connect\.facebook\.net|fbq\(/],
       ['Plausible', /plausible\.io/],
       ['Hotjar', /hotjar/],
-      ['Matomo', /matomo|piwik/
+      ['Matomo', /matomo|piwik/]
     ];
     const found = patterns.filter((x)=>x[1].test(source)).map((x)=>x[0]);
     return reportShell('Analytics tag scan', found.length ? found.length + ' detected' : 'No common tags detected',
