@@ -659,7 +659,7 @@ function frame(kind) {
   root.innerHTML =
     '<div class="breadcrumb"><a href="../">HOME</a> / '+escapeHtml(meta[1])+'</div>' +
     '<section class="tool-hero"><div><p class="eyebrow">'+escapeHtml(meta[1])+
-    '</p><h1>'+escapeHtml(meta[0])+'</h1><p>'+escapeHtml(meta[2])+
+    '</p><h2 class="tool-title">'+escapeHtml(meta[0])+'</h2><p>'+escapeHtml(meta[2])+
     '</p></div><div class="tool-meta"><div><span>01</span><strong>Focused check</strong></div>' +
     '<div><span>02</span><strong>No account</strong></div><div><span>03</span><strong>Browser-first</strong></div></div></section>' +
     '<div class="tool-shell"><div class="panel" id="tool-panel"></div><aside><div class="ad-in-tool">Advertisement</div>' +
