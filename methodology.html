@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Methodology & Sources — Website Owner Toolkit</title>
+<meta name="description" content="How Website Owner Toolkit checks website signals, what its browser-first tools can and cannot verify, and the primary documentation used as reference.">
+<link rel="canonical" href="https://yiminggod1.github.io/Website-Owner-Toolkit/methodology.html">
+<meta property="og:title" content="Methodology & Sources — Website Owner Toolkit">
+<meta property="og:description" content="How the toolkit checks website signals and the documentation used as reference.">
+<meta property="og:type" content="article">
+<link rel="stylesheet" href="styles.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"Methodology & Sources — Website Owner Toolkit","description":"How Website Owner Toolkit checks website signals, limitations of browser-first diagnostics, and primary documentation used as reference.","mainEntityOfPage":"https://yiminggod1.github.io/Website-Owner-Toolkit/methodology.html","isPartOf":{"@type":"WebSite","name":"Website Owner Toolkit","url":"https://yiminggod1.github.io/Website-Owner-Toolkit/"}}</script>
+</head>
+<body>
+<header class="topbar">
+<a class="brand" href="./"><span class="brand-mark">WO</span><span><strong>Website Owner</strong><small>Toolkit</small></span></a>
+<nav class="topnav"><a href="./#audit">Audit</a><a href="./#tools">Tools</a><a href="./#guides">Guides</a><a href="./about.html">About</a></nav>
+<a class="nav-cta" href="./tools/website-audit.html">Run an audit <span>↗</span></a>
+</header>
+<main class="tool-page">
+<div class="breadcrumb"><a href="./">HOME</a> / METHODOLOGY</div>
+<section class="guide-article">
+<p class="eyebrow">METHOD / SOURCES</p>
+<h1>How the toolkit reaches a result.</h1>
+<p class="guide-dek">The site uses focused, explainable checks instead of pretending to reproduce every part of a search engine, browser, crawler, or security scanner.</p>
+<h2>Browser-first by design</h2>
+<p>Many tools parse source text directly in the browser. This keeps routine checks simple and makes it clear what information is being analyzed. DNS tools use browser-accessible DNS-over-HTTPS requests because a DNS resolver is required to answer public DNS queries.</p>
+<h2>What a result means</h2>
+<p>A result is evidence for a next action, not a certificate. For example, finding a canonical tag confirms that a declaration exists in the supplied HTML; it does not prove that search systems will select that URL as canonical.</p>
+<h2>Why some checks need fallbacks</h2>
+<p>Normal web pages often restrict cross-origin browser reads. The Website Audit tool therefore offers a pasted HTML fallback rather than attempting to bypass browser security. Server-side crawlers, authenticated pages, redirect chains, request timing, and full network traces require capabilities outside this static browser implementation.</p>
+<h2>How severity is used</h2>
+<p>Severity is a triage aid. “High,” “medium,” and “low” indicate how prominently a signal is presented in this toolkit; they do not represent a universal ranking impact or a security classification.</p>
+<h2>Primary references</h2>
+<p>The site uses official technical and search documentation as reference material when defining checks and explanations. Key sources include <a href="https://developers.google.com/search/docs" rel="noopener noreferrer">Google Search Central documentation</a>, <a href="https://developers.google.com/search/docs/fundamentals/creating-helpful-content" rel="noopener noreferrer">Google's people-first content guidance</a>, <a href="https://support.google.com/adsense/answer/48182" rel="noopener noreferrer">Google AdSense policies</a>, <a href="https://www.sitemaps.org/protocol.html" rel="noopener noreferrer">Sitemaps protocol</a>, <a href="https://www.rfc-editor.org/" rel="noopener noreferrer">IETF RFC resources</a>, and <a href="https://www.w3.org/WAI/standards-guidelines/wcag/" rel="noopener noreferrer">W3C accessibility guidance</a>.</p>
+<h2>Keeping the toolkit honest</h2>
+<p>When a check cannot establish something from browser-visible information, the interface says so. The goal is a useful next step with visible limitations, rather than a misleading score or guarantee.</p>
+<div class="guide-next"><strong>Use the methodology in practice</strong><p>Start with the Website Audit, then open the focused checker that matches the finding.</p><a href="./tools/website-audit.html">Open Website Audit →</a></div>
+</section>
+</main>
+<footer class="footer"><div><strong>Website Owner Toolkit</strong><span>Practical checks. Clear fixes.</span></div><div class="footer-links"><a href="./about.html">About</a><a href="./privacy.html">Privacy</a><a href="./terms.html">Terms</a></div></footer>
+</body>
+</html>
